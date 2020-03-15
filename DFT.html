@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<head>
+<title> Read a file </title>
+<body>
+Upload the required text file here :
+<input type='file' accept='text/plain' onchange='openFile(event)'><br> <! Takes a text file as input and calls openFile() event function !>
+</input>
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+var openFile = function(event) {   
+	//Reads the text file
+	var input = event.target;
+	var reader = new FileReader();
+	reader.readAsText(input.files[0]);
+	//reader.onLoad is a callback function that is called once the reading of the file is completed
+	reader.onload = function()
+	{
+		var textarea = reader.result;
+		var lines = textarea.split("\n");
+		var ang=[];   
+		var pres=[];  
+			for(var i=0;i<lines.length;i++)
+			{
+				//Assigning the values in the text file to variables
+				var para = lines[i];
+				pres[i] = para.substring(para.lastIndexOf(",") + 1,  para.lastIndexOf(")"));
+				ang[i] = para.substring(para.lastIndexOf("(") + 1, para.lastIndexOf(","));
+			} 
+			 
+			function computeDft(inreal, inimag) {
+				//Computes DFT and returns output
+				var n = inreal.length;
+				var out = new Array(n);
+				var outreal = new Array(n);
+				var outimag = new Array(n);
+				for (var k = 0; k < n; k++) {  // For each output element
+					var sumreal = 0;
+					var sumimag = 0;
+					for (var t = 0; t < n; t++) {  // For each input element
+						var angle = 2 * Math.PI * t * k / n;
+						sumreal +=  inreal[t] * Math.cos(angle) - inimag[t] * Math.sin(angle);
+						sumimag +=  inreal[t] * Math.sin(angle) + inimag[t] * Math.cos(angle);
+					}
+					outreal[k] = sumreal;
+					outimag[k] = sumimag;
+				}
+				for(k=0;k<n;k++)
+				{       
+					
+					outreal[k]=Math.abs(outreal[k]);
+					outimag[k]=Math.abs(outimag[k]);
+					out[k]=outreal[k]+outimag[k];
+				}
+				return out;
+			}
+			var n = pres.length;
+			//Creating a null matrix			
+			var arr = [];
+			for(var o=0;o<n;o++)
+			{
+				arr[o]=0;
+			}
+			//Calls the DFT function which takes 2 arguments : Real and Imaginary. Imaginary is given as null matrix since it is not required
+			var dft = computeDft(pres,arr);
+			var f=[];
+			//f is for determining the axis of output wave
+			for(var j=n/2;j>-n/2;j--)
+			{
+			    f[j]=ang[j];
+			}
+				google.charts.load('current', {'packages':['corechart']});
+
+					  // Set a callback to run when the Google Visualization API is loaded.
+				google.charts.setOnLoadCallback(inputWave);
+				google.charts.setOnLoadCallback(outputWave);
+				google.charts.setOnLoadCallback(inputWave1);
+				google.charts.setOnLoadCallback(outputWave1);
+
+					  // Callback that creates and populates a data table,
+					  // instantiates the pie chart, passes in the data and
+					  // draws it.s
+				function inputWave() {
+
+					// Create the data table.
+				var data = new google.visualization.DataTable();
+				data.addColumn('number', 'Crank angle');
+				data.addColumn('number', 'Pressure');
+				for(var k=0;k<n;k++)
+				{
+				data.addRow([Number(ang[k]),Number(pres[k])]); //Adding the time vector and sine function arrays as a row in google charts
+				}
+
+					// Set chart options
+				var options = {'title':'Pressure vs. Crank angle',
+							   'width':1000,
+							   'height':500};
+
+					// Instantiate and draw our chart, passing in some options.
+				document.getElementById('input').innerHTML = `The input wave for ${pres.length} columns is :`;
+				var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+				chart.draw(data, options);
+				}
+
+				//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$//
+				
+				
+				function outputWave() {
+
+				// Create the data table.
+				var data = new google.visualization.DataTable();
+				data.addColumn('number', 'Frequency');
+				data.addColumn('number', 'Amplitude');
+				for(var k=0;k<n;k++)
+				{
+				data.addRow([Number(1/ang[k]),Number(2*dft[k]/n)]);
+				}
+				// Set chart options
+				var options = {'title':'Pressure vs. Crank angle (After DFT)',
+				               'width':2000,
+				               'height':500}
+
+				// Instantiate and draw our chart, passing in some options.
+				document.getElementById('output').innerHTML = `The output wave for ${pres.length} columns is :`;
+				var chart = new google.visualization.LineChart(document.getElementById('chart_div2'));
+				chart.draw(data, options);
+				}
+				var high = 0;
+				for(k=0;k<n;k++)
+				{
+					var temp = [];
+					temp[k]=2*dft[k]/n;
+					temp[k-1]=2*dft[k-1]/n;
+					temp[-1]=0;
+					if(temp[k]>high)
+					{
+						high = temp[k];
+						var temp2 = ang[k];
+						var temp3 = ang[n-2]-ang[k];
+					}
+				}
+				document.getElementById('high').innerHTML = `The highest pressure point is ${high} at the angle ${temp2} or ${temp3}`;
+				
+				
+					
+				//********************************************************************************************************************//
+				
+				
+				function inputWave1() {
+
+					// Create the data table.
+				var data = new google.visualization.DataTable();
+				data.addColumn('number', 'Crank angle');
+				data.addColumn('number', 'Pressure');
+				for(var k=0;k<n;k=k+2)
+				{
+				data.addRow([Number(ang[k]),Number(pres[k])]); //Adding the time vector and sine function arrays as a row in google charts
+				}
+
+					// Set chart options
+				var options = {'title':'Pressure vs. Crank angle',
+							   'width':1000,
+							   'height':500};
+
+					// Instantiate and draw our chart, passing in some options.
+				document.getElementById('input1').innerHTML = `The input wave for ${pres.length/2} columns is :`;
+				var chart = new google.visualization.LineChart(document.getElementById('chart_div3'));
+				chart.draw(data, options);
+				}
+
+				//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$//
+				
+				
+				function outputWave1() {
+
+				// Create the data table.
+				var data = new google.visualization.DataTable();
+				data.addColumn('number', 'Frequency');
+				data.addColumn('number', 'Amplitude');
+				for(var k=0;k<n;k=k+2)
+				{
+				data.addRow([Number(1/ang[k]),Number(2*dft[k]/n)]);
+				}
+				// Set chart options
+				var options = {'title':'Pressure vs. Crank angle (After DFT)',
+				               'width':1000,
+				               'height':500}
+
+				// Instantiate and draw our chart, passing in some options.
+				document.getElementById('output1').innerHTML = `The output wave for ${pres.length/2} columns is :`;
+				var chart = new google.visualization.LineChart(document.getElementById('chart_div4'));
+				chart.draw(data, options);
+				}
+				
+				//**********************************************************************************************************************//
+				
+				
+				var highx = 0;
+				for(k=0;k<n;k=k+2)
+				{
+					var tempx = [];
+					tempx[k]=2*dft[k]/n;
+					tempx[k-1]=2*dft[k-1]/n;
+					tempx[-1]=0;
+					if(tempx[k]>highx)
+					{
+						highx = tempx[k];
+						var temp2x = ang[k];
+						var temp3x = ang[n-2]-ang[k];
+					}
+				}
+				document.getElementById('high1').innerHTML = `The highest pressure point is ${highx} at the angle ${temp2x} or ${temp3x}`;
+	};
+};
+</script>
+<br><br>
+<div id="input"> </div> <br><br>
+<div id="chart_div"> </div> <br>
+<div id="output"> </div> <br><br>
+<div id="high"> </div> <br>
+<div id="chart_div2"> </div>
+<div id="input1"> </div> <br><br>
+<div id="chart_div3"> </div> <br>
+<div id="output1"> </div> <br><br>
+<div id="high1"> </div> <br>
+<div id="chart_div4"> </div>
+</body>
+</head>
